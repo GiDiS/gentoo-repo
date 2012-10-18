@@ -13,7 +13,7 @@ SLOT="0"
 
 EGIT_REPO_URI="git://github.com/tony2001/pinba_engine.git"
 
-KEYWORDS="~x86 ~amd64"
+#KEYWORDS="~x86 ~amd64"
 
 DEPEND="
     dev-libs/protobuf

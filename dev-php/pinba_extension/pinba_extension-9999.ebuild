@@ -19,7 +19,7 @@ EGIT_REPO_URI="git://github.com/tony2001/pinba_extension.git"
 LICENSE="PHP-3"
 
 SLOT="0"
-KEYWORDS="~x86 ~amd64"
+#KEYWORDS="~x86 ~amd64"
 IUSE="engine"
 
 DEPEND="
