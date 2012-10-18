@@ -34,5 +34,5 @@ my_conf="--with-pinba"
 src_install() {
     php-ext-source-r2_src_install
     php-ext-source-r2_addtoinifiles "pinba.enabled" "1"
-    php-ext-source-r2_addtoinifiles "#pinba.server" "localhost"
+    php-ext-source-r2_addtoinifiles ";pinba.server" "localhost"
 }
