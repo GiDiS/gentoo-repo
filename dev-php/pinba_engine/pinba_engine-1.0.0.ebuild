@@ -4,47 +4,40 @@
 
 EAPI=4
 
-inherit autotools confutils eutils multilib
-
-
-SRC_URI="http://pinba.org/files/pinba_engine-${PV}.tar.gz"
-
-KEYWORDS="~amd64"
+inherit autotools confutils eutils
 
 DESCRIPTION="Pinba is a realtime monitoring/statistics server for PHP using MySQL as a read-only interface"
 HOMEPAGE="http://pinba.org/wiki/Main_Page"
 LICENSE="GPL"
 SLOT="0"
 
-DEPEND="dev-libs/protobuf
-    >=dev-libs/libevent-1.4.0
-    >=dev-libs/judy-1.0.4
+SRC_URI="http://pinba.org/files/${P}.tar.gz"
+
+KEYWORDS="~x86 ~amd64"
+
+DEPEND="
+    dev-libs/protobuf
+    dev-libs/libevent
+    dev-libs/judy
     >=virtual/mysql-5.1
 "
 RDEPEND="${DEPEND}"
 
 pkg_setup() {
-	MYSQL_ATOM="dev-db/mysql"
-	MYSQL_PLUGINDIR="$(mysql_config --plugindir)"
-	MYSQL_INCLUDE="$(mysql_config --include)"
-	MYSQL_PACKAGE="$(best_version $MYSQL_ATOM)";
-	MYSQL_EBUILD="${PORTDIR}/${MYSQL_PACKAGE/mysql/mysql/mysql}.ebuild"
-	ewarn ${MYSQL_EBUILD}
-#	ebuild "${MYSQL_EBUILD}" prepare
-}
+    MYSQL_PLUGINDIR="$(mysql_config --plugindir)"
+    MYSQL_PACKAGE="$(best_version "dev-db/mysql" || best_version "dev-db/mariadb")";
+    MYSQL_SOURCES="${PORTAGE_TMPDIR}/portage/${MYSQL_PACKAGE}/work/mysql"
 
-src_prepare() {
-    sed -i -e 's|HEADERS="include/my_dir.h include/mysql/plugin.h include/mysql.h include/mysql_version.h"|HEADERS="my_dir.h plugin.h mysql.h mysql_version.h"|' configure.in
-    sed -i -e 's|HEADERS="include/my_dir.h include/mysql/plugin.h include/mysql.h include/mysql_version.h"|HEADERS="my_dir.h plugin.h mysql.h mysql_version.h"|' configure
-    sed -i -e 's|$with_mysql/include|$with_mysql|' configure
-    sed -i -e 's|$with_mysql/include|$with_mysql|' configure.in
-
-    sed -i -e 's|include/mysql_version.h|mysql_version.h|' \
-           -e 's|mysql/plugin.h|plugin.h|' src/ha_pinba.cc
+    einfo "Current mysql installation: ${MYSQL_PACKAGE}"
+    einfo "Try use ${MYSQL_SOURCES} as mysql sources"
+    if [[ ! -d "${MYSQL_SOURCES}" ]]; then
+        eerror "Can't find mysql sources. Please, rebild mysql with FEATURES=\"keepwork\""
+        die "Can't find mysql sources"
+    fi
 }
 
 src_configure() {
-  econf --with-mysql="${MYSQL_INCLUDE#-I}" \
+  econf --with-mysql="${MYSQL_SOURCES}" \
         --with-judy=/usr \
         --with-protobuf=/usr \
         --with-event=/usr \
@@ -52,7 +45,6 @@ src_configure() {
 }
 
 src_install() {
-    cd pinba_engine-${PV}
     emake install DESTDIR="${D}" || die "emake install failed"
     dodir /usr/share/pinba/
     insinto /usr/share/pinba/
@@ -60,13 +52,10 @@ src_install() {
 }
 
 pkg_postinst() {
-    ebuild "${MYSQL_EBUILD}" clean
-
     einfo "You need to execute the following command on mysql server"
     einfo "so pinba works properly:"
     elog "mysql> INSTALL PLUGIN pinba SONAME 'libpinba_engine.so';"
     elog "mysql> CREATE DATABASE pinba;"
     elog "mysql -D pinba < /usr/share/pinba/default_tables.sql"
 }
-
 
